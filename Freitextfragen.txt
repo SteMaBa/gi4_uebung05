@@ -1,0 +1,121 @@
+Freitextfragen Übung 5:
+
+Stack
+Aufgabe 1:
+
+     Stack vor der Multiplikation:    
+        
+           
+           |       |    niedrige Speicheradressen
+           |       |
+           |       |      / \ 
+           |       |       |  Wachstumsrichtung
+      ESP->|  edx  |       |
+           |  ...  |
+      EBP->|       |    hohe Speicheradressen
+      
+      
+      
+     Stack unmittelbar nach der Multiplikation (imul ebx):    
+        
+           
+           |       |    niedrige Speicheradressen
+           |       |
+      ESP->|  ebx  |      / \ 
+      EBP->|Old EBP|       |  Wachstumsrichtung
+           |  edx  |       |
+           |  ...  |
+           |       |    hohe Speicheradressen 
+           
+
+
+Funktionen 
+
+Aufgabe 1:
+
+        Auf dem Stack: 6 Integervariablen (bezeichnet mit int)
+                       1 20 Zeichen langer String (1 char hat die Größe 1 Byte)
+                         (bezeichnet mit string[i,j], also i-ter bis j-ter char des strings)       
+                       2 Gleitkommazahlen 
+                         (bezeichnet mit double-1-MSB/LSB und double-2-MSB/LSB, Little Endian)
+                         (LSB: Bytes 2 bis 1, MSB: Bytes 4 bis 3) 
+        
+        Aufbau des Stack:         
+        
+          
+           |             |    niedrige Speicheradressen
+           |     ...     |
+      ESP->|double-2-LSB |
+           |double-2-MSB |
+           |double-1-LSB |
+           |double-1-MSB |  
+           |string[15,19]|
+           |string[12,15]|
+           | string[8,11]|
+           | string[4,7] |            
+           | string[0,3] |       
+           |     int     |
+           |     int     |
+           |     int     |
+           |     int     |
+           |     int     |     / \ 
+           |     int     |      |  Wachstumsrichtung
+           |     ...     |      |
+     EBP ->|             |
+           |     ...     |
+           |             |    hohe Speicheradressen        
+                       
+      Falls die Länge des Strings nicht berücksichtigt wird und 30 Zeichen kopiert werden,
+      wird der angrenzende Speicher (in Richtung niedrigere Adresse) überschrieben. 
+      Befinden sich in diesem Fall alle Variablen auf dem Stack und werden 30 Zeichen in die Stringvariable kopiert,
+      werden double-1-MSB bis einschließlich double-2-MSB überschrieben.
+      
+Aufgabe 2:
+       
+       Funktion A: Lokale Variablen int i, j, k und char a, b
+                   Ruft Funktion B auf
+       Funktion B: Lokale Variablen int l, m und double x, y  
+                   (x und y in Little Endian, LSB: Bytes 2 bis 1, MSB: Bytes 4 bis 3)
+        
+
+           
+           |             |    niedrige Speicheradressen
+     ESP ->|    y-LSB    |
+           |    y-MSB    |
+           |    x-LSB    |
+           |    x-MSB    |           
+           |     m       |       
+           |     l       |
+     EBP ->|   Old EBP   |
+           |     b       |
+           |     a       |
+           |     k       |     / \ 
+           |     j       |      |  Wachstumsrichtung
+           |     i       |      |
+           |   Old EBP   |
+           |     ...     |
+           |             |    hohe Speicheradressen 
+           
+Aufgabe 3:
+
+        Aufgerufene Funktion erhält Parameter:
+        Bei einer geringen Anzahl Parameter wäre es denkbar, dass jeder Parameter, sowie die Anzahl der Parameter in je ein Arbeitsregister gespeichert werden würden.
+        Nach einer festen Reihenfolge würden dann zunächst die Anzahl der Parameter (z.B. aus EAX) und dann die Parameter selbst (z.B. bei 2 Argumenten zunächst aus EBX und dann aus ECX) ausgelesen.
+        Bei einer größeren Anzahl Parameter wäre es denkbar, dass die aufrufende Funktion zunächst alle Argumente in umgekehrter Reihenfolge auf den Stack legt und einen Offset vom neuen EBP (der aufzurufenden Funktion) zum ersten auf den Stack gelegten Parameter, sowie die Anzahl Parameter an die aufzurufende Funktion übergibt (entweder in zwei Registern, z.B. EAX und EBX oder als letzte vor dem Aufruf auf den Stack gelegte Variablen).
+        Die aufgerufene Funktion würde dann Anzahl Parameter und Offset lesen und nach Bedarf durch den Stack (bis maximal zum Offset) laufen, um den n-ten Parameter zu finden. Eventuell müsste dann zu jedem Paramter noch die Größe mit auf den Stack gelegt werden, um ein korrektes Lesen zu ermöglichen.
+        
+        Aufgerufene Funktion gibt Wert zurück:
+        Ein Rückgabewert könnte standardmäßig im Stack an der Stelle vor dem old EBP (dem EBP der aufgerufenen Funktion) gespeichert werden und von der aufrufenden Funktion dann durch das Subtrahieren von 8 vom ESP erreicht werden.
+        Diese Daten sind aber nicht sonderlich sicher, da sie außerhalb der Grenzen von ESP und EBP liegen und ggf. leicht überschrieben werden können.
+        Wahrscheinlicher ist, dass der Rückgabewert standardmäßig beim Verlassen der aufgerufenen Funktion in einem (oder zwei) festen Registern gespeichert wird, z.B. EAX (und EDX).
+        Die aufrufende Funktion nimmt sich den Rückgabewert dann aus dem (den) standardmäßig festgelegten Register(n).
+        
+        Beispiel Funktion max(a,b):
+        Diese Funktion bekommt die beiden Parameter a und b (per Register oder per Stack) übergeben, vergleicht die beiden Werte, springt je nach Verhältnis in ein Unterprogramm und gibt dann (per Stack oder per Register) die größere der beiden Zahlen a oder b zurück. 
+        
+        
+           
+
+        
+
+      
